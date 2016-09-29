@@ -1,0 +1,19 @@
+{% extends "/base.html" %}
+
+{% block content %}
+
+	{% if category %}
+
+		{% include "/category.html" %}
+		
+	{% endif %}
+
+
+	{% for item in items %}
+
+		{{ item.render() | safe }}
+
+	{% endfor %}
+
+
+{% endblock %}

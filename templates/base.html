@@ -1,0 +1,71 @@
+{% include "/base_layout.html" %}
+
+  <div class="container">
+
+    <header>
+      <!-- Udacity logo, name, caption -->
+      <div class="row margin-top-sm">
+        <div class="col-md-1 col-md-offset-1">
+          <img class="img-responsive title-logo" src="/img/udacity.svg" alt="Udacity logo">
+        </div>
+        <div class = "col-md-5 col-md-offset-1 text-center bg-warning">
+          {% if msg %}
+            <strong>
+              {{ msg | replace("+", " ") }}
+            </strong>
+          {% endif %}
+        </div>
+        <div class="col-md-2 text-right">
+          <small>
+            {% if user_curr %}
+              {{user_curr.username}} (<a class="login-link" href="/blog/logout">logout</a>)
+              <br>
+              <a class="login-link" href="/blog/newentry">Compose New Entry</a>
+            {% else %}
+              <a class="login-link" href="/blog/login">login</a>
+              |
+              <a class="login-link" href="/blog/registration">register</a>
+            {% endif %}
+          </small>
+
+        {% if author %}        
+          <div class="text-right text-uppercase margin-top-sm margin-bottom-none">
+            <h1 class="text-thin title-super margin-top-sm margin-bottom-sm">
+                <a href="/blog/{{ author.username }}/all">
+                  {{ author.username }}
+                </a>
+            </h1>
+
+            {% if author.signature != None %}
+              <h4 class="margin-top-sm margin-bottom-sm">
+                <small>
+                  {{ author.signature }}
+                </small>
+              </h4>
+            {% endif %}
+
+          </div>
+        {% endif %}
+        
+        </div>
+      </div>
+
+    </header>
+
+    <div class="row margin-top-none margin-bottom-none">
+      <div class="col-md-11">
+        <hr class="hr-thick">
+      </div>
+    </div>
+
+    {% block content %}
+    {% endblock %}
+
+    <!-- Social Section -->
+  <footer class="row">
+      <a class="zocial-googleplus col-md-2 col-md-offset-4" href="https://plus.google.com/+BramWarrick"></a>
+      <a class="zocial-linkedin col-md-2" href="https://www.linkedin.com/in/bram-warrick-69930212"></a>
+    </footer>
+  </div>
+
+{% include "/base_footer.html" %}

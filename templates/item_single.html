@@ -1,0 +1,24 @@
+{% extends "/base.html" %}
+
+{% block content %}
+
+	{% for category in categories %}
+
+		{{ category.render() | safe }}
+		
+	{% endfor %}
+
+
+	{% for item in items %}
+
+		{{ item.render() | safe }}
+
+	{% endfor %}
+
+{# 	{% if user_curr %}
+
+		{% include "/blog/comment_add.html" %}
+
+	{% endif %} #}
+
+{% endblock %}

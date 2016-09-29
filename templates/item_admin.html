@@ -1,0 +1,55 @@
+{% extends "/base.html" %}
+
+{% block content %}
+  
+      <!-- Begin Featured Work -->
+
+      <form class = "margin-top-none" method="post">
+        <label class="row margin-top-none">
+          <div class="col-md-3 col-md-offset-1">
+            Item
+          </div>
+          <div class="col-md-1 col-md-offset-5">
+              <button class="btn btn-default" type="submit"  
+                name="submit" value="delete">
+                <img class = "img-responsive" src="/img/sm_trash_can.png">
+              </button>
+          </div>
+          <div class="row margin-bottom-sm">
+            <input class="col-md-9 col-md-offset-1 text-center" type="text" name="subject" value="{{ item_name }}">
+          </div>
+       
+        </label>
+
+        <label class="row">
+          <div class="col-md-9 col-md-offset-1">
+            Description
+          </div>
+          <div class="row margin-bottom-sm">
+            <textarea class="col-md-9 col-md-offset-1" rows="10" name="content">{{ item_description }}</textarea>
+          </div>
+        </label>
+
+        {% if error %}
+          <div class="row margin-bottom-sm">
+            <div class="col-md-9 col-md-offset-1 text-center bg-danger">
+              {{ error }}
+            </div>
+          </div>
+        {% endif %}
+
+        <div class="row">
+          <button type="submit" name="submit" value="submit" class="col-md-1 col-md-offset-2 btn btn-default">
+            Submit
+          </button>
+          <button type="reset" name="reset" value="reset" class="col-md-1 col-md-offset-2 btn btn-default">
+            Reset
+          </button>
+          <button type="submit" name="cancel" value="cancel" class="col-md-1 col-md-offset-2 btn btn-default">
+            Cancel
+          </button>
+        </div>
+
+    </form>
+
+{% endblock %}
