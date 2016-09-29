@@ -83,7 +83,7 @@ class Category(Base):
         if category:
             return category
         else:
-            newCategory = cls(user_name=name,
+            newCategory = cls(category_name=name,
                               user_id=user_id)
             session.add(newCategory)
             session.commit()
@@ -96,19 +96,20 @@ class Category(Base):
         return category
 
     @classmethod
-    def render(self, user_curr=None):
-        """ Performs replacements and allows values to be passed
-        into /blog/entry.html file at runtime
+    def by_user(cls, user_id):
+        categories = session.query(cls).filter_by(user_id=user_id)
+        categories = categories.order_by(cls.category_name).all()
+        return categories
 
-        Args:
-            user: user entity for logged in user
-            author: user entity for the author of entry(s)"""
+    def render(self):
+        """ Allows values to be passed into category_loop.html
+            file at runtime"""
         if self:
-            self._category_name = self.category_name.replace('\n', '<br>')
+            self._category_name = self.category_name
             self._category_id = self.category_id
             self._user_id = self.user_id
             self._owner_name = session.query(User).filter_by(
-                id=self.user_id).one().user_name
+                user_id=self.user_id).one().user_name
         return render_template("/category.html", category=self)
 
 

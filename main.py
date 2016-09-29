@@ -191,8 +191,7 @@ def showCategories():
     else:
         user = User.by_name_email(login_session['username'],
                                   login_session['email'])
-        categories = session.query(Category).filter_by(user_id=user.user_id)
-        categories = categories.order_by(asc(Category.category_name))
+        categories = Category.by_user(user.user_id)
         return render_template('category_loop.html', categories=categories)
 
 # Create a new category
@@ -204,12 +203,12 @@ def newCategory():
         return redirect('/login')
     if request.method == 'POST':
         name = request.form['category']
-        user_id = User.by_email(login_session['email'])
-        if name and user_id:
-            category = Category.create(name, user_id)
+        user = User.by_email(login_session['email'])
+        if name and user:
+            category = Category.create(name, user.user_id)
             if category:
                 flash('New Category %s Successfully Created'
-                      % newCategory.category_name)
+                      % Category.category_name)
             return redirect('/')
         else:
             return render_template('category_admin.html')
