@@ -9,24 +9,39 @@
           <div class="col-md-3 col-md-offset-1">
             Item
           </div>
-          <div class="col-md-1 col-md-offset-5">
+          <div class="col-md-4 col-md-offset-4">
               <button class="btn btn-default" type="submit"  
                 name="submit" value="delete">
-                <img class = "img-responsive" src="/img/sm_trash_can.png">
+                <img class = "img-responsive" src="/static/img/sm_trash_can.png">
               </button>
           </div>
           <div class="row margin-bottom-sm">
-            <input class="col-md-9 col-md-offset-1 text-center" type="text" name="subject" value="{{ item_name }}">
+            <input class="col-md-9 col-md-offset-1 text-center" type="text" name="name" value="{{ item_name }}">
           </div>
        
         </label>
+
+        <label class="row margin-top-none">
+          <div class="col-md-2 col-md-offset-1">
+            Categories
+          </div>
+
+        <select name="category" class="col-md-3">
+
+          {% for category in categories %}
+
+            {{ category.render_dropdown() | safe }}
+
+          {% endfor %}
+
+        </select>
 
         <label class="row">
           <div class="col-md-9 col-md-offset-1">
             Description
           </div>
           <div class="row margin-bottom-sm">
-            <textarea class="col-md-9 col-md-offset-1" rows="10" name="content">{{ item_description }}</textarea>
+            <textarea class="col-md-9 col-md-offset-1" rows="5" name="description">{{ item_description }}</textarea>
           </div>
         </label>
 

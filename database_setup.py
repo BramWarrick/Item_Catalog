@@ -112,6 +112,14 @@ class Category(Base):
                 user_id=self.user_id).one().user_name
         return render_template("/category.html", category=self)
 
+    def render_dropdown(self):
+        """ Allows values to be passed into category_loop.html
+            file at runtime"""
+        if self:
+            self._category_name = self.category_name
+            self._category_id = self.category_id
+        return render_template("/category_dropdown_part.html", category=self)
+
 
 class Item(Base):
     __tablename__ = 'item'
@@ -120,8 +128,8 @@ class Item(Base):
     item_name = Column(String(250), nullable=False)
     item_description = Column(String(1000), nullable=False)
     category_id = Column(Integer, ForeignKey('category.category_id'))
-    category = relationship(Category)
     user_id = Column(Integer, ForeignKey('user.user_id'))
+    category = relationship(Category)
     user = relationship(User)
 
     @property
@@ -132,6 +140,45 @@ class Item(Base):
             'item_description': self.item_description,
             'item_id': self.item_id
         }
+
+    @classmethod
+    def create(cls, item_name, item_description, category_id, user_id):
+        item = cls.by_category_user(category_id, user_id)
+        if item:
+            return item
+        else:
+            newItem = cls(item_name=item_name,
+                          item_description=item_description,
+                          category_id=category_id,
+                          user_id=user_id)
+            session.add(newItem)
+            session.commit()
+            return newItem
+
+    @classmethod
+    def by_category_user(cls, category_id, user_id):
+        item = session.query(cls).filter_by(category_id=category_id)
+        item = item.filter_by(user_id=user_id).all()
+        return item
+
+    @classmethod
+    def by_category_id(cls, category_id):
+        categories = session.query(cls).filter_by(category_id=category_id)
+        categories = categories.order_by(cls.item_name).all()
+        return categories
+
+    def render(self):
+        """ Allows values to be passed into category_loop.html
+            file at runtime"""
+        if self:
+            self._item_id = self.item_id
+            self._item_name = self.item_name
+            self._item_description = self.item_description
+            self._category_id = self.category_id
+            self._user_id = self.user_id
+            self._owner_name = session.query(User).filter_by(
+                user_id=self.user_id).one().user_name
+        return render_template("/category.html", category=self)
 
 
 engine = create_engine('sqlite:///item_catalog.db')

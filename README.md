@@ -2,3 +2,4 @@
 # Initial commit - oAuth confirmed working, user created
 # Categories creating
 # added templates and static
+# Items writing, created category drop down logic

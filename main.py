@@ -216,6 +216,31 @@ def newCategory():
         return render_template('category_admin.html')
 
 
+@app.route('/item/new', methods=['GET', 'POST'])
+def newItem():
+    if 'username' not in login_session:
+        return redirect('/login')   
+    if request.method == 'POST':
+        name = request.form['name']
+        description = request.form['description']
+        category_id = request.form['category']
+        user = User.by_email(login_session['email'])
+        if name and description and user:
+            item = Item.create(name, description, category_id, user.user_id)
+            if item:
+                flash('New Item %s Successfully Created'
+                      % Item.item_name)
+            return redirect('/')
+        else:
+            return render_template('item_admin.html')
+    else:
+        user = User.by_email(login_session['email'])
+        categories = Category.by_user(user.user_id)
+        return render_template('item_admin.html',
+                               user=user,
+                               categories=categories)
+
+
 if __name__ == '__main__':
     app.secret_key = 'super_secret_key'
     app.debug = True
