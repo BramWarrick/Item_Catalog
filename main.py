@@ -1,17 +1,19 @@
 from flask import Flask, render_template, request, redirect
-from flask import jsonify, flash
-from sqlalchemy import create_engine, asc
+from flask import jsonify, flash, make_response
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from database_setup import Base, User, Category, Item
 from flask import session as login_session
+
 import random
 import string
-from oauth2client.client import flow_from_clientsecrets
-from oauth2client.client import FlowExchangeError
 import httplib2
 import json
-from flask import make_response
 import requests
+
+from oauth2client.client import flow_from_clientsecrets
+from oauth2client.client import FlowExchangeError
+
 
 app = Flask(__name__)
 
@@ -122,7 +124,8 @@ def gconnect():
     output += '!</h1>'
     output += '<img src="'
     output += login_session['picture']
-    output += ' " style = "width: 300px; height: 300px;border-radius: 150px;-webkit-border-radius: 150px;-moz-border-radius: 150px;"> '
+    output += ' " style = "width: 300px; height: 300px;border-radius: 150px'
+    output += ';-webkit-border-radius: 150px;-moz-border-radius: 150px;">'
     flash("you are now logged in as %s" % login_session['username'])
     print "done!"
     return output
@@ -163,22 +166,22 @@ def gdisconnect():
 
 
 # JSON APIs to view Category Information
-@app.route('/category/<int:category_id>/menu/JSON')
-def categoryMenuJSON(category_id):
+@app.route('/category/<int:category_id>/items/JSON')
+def itemJSON(category_id):
     # category = session.query(Category).filter_by(id=category_id).one()
-    items = session.query(MenuItem).filter_by(
+    items = session.query(Item).filter_by(
         category_id=category_id).all()
     return jsonify(items=[i.serialize for i in items])
 
 
-@app.route('/category/<int:category_id>/menu/<int:menu_id>/JSON')
-def menuItemJSON(category_id, menu_id):
-    Menu_Item = session.query(MenuItem).filter_by(id=menu_id).one()
-    return jsonify(Menu_Item=Menu_Item.serialize)
+@app.route('/category/<int:category_id>/JSON')
+def categoryJSON(category_id):
+    category = Category.by_id(category_id)
+    return jsonify(category=category.serialize)
 
 
 @app.route('/category/JSON')
-def categoriesJSON():
+def categoryAllJSON():
     categories = session.query(Category).all()
     return jsonify(categories=[r.serialize for r in categories])
 
@@ -197,29 +200,46 @@ def showCategories():
 # Create a new category
 
 
+@app.route('/category/<int:category_id>/edit/', methods=['GET', 'POST'])
 @app.route('/category/new', methods=['GET', 'POST'])
-def newCategory():
+def newCategory(category_id=None):
     if 'username' not in login_session:
         return redirect('/login')
     if request.method == 'POST':
         name = request.form['category']
         user = User.by_email(login_session['email'])
         if name and user:
-            category = Category.create(name, user.user_id)
+            category, msg = Category.add_or_update(name,
+                                                   user.user_id,
+                                                   category_id)
             if category:
-                flash('New Category %s Successfully Created'
-                      % Category.category_name)
+                flash(msg)
             return redirect('/')
         else:
             return render_template('category_admin.html')
     else:
-        return render_template('category_admin.html')
+        category_name = ""
+        if category_id:
+            category_name = Category.name_by_id(category_id)
+        return render_template('category_admin.html',
+                               category_name=category_name)
+
+# Show category and contents
 
 
-@app.route('/item/new', methods=['GET', 'POST'])
-def newItem():
+@app.route('/category/<int:category_id>')
+def categorySingle():
     if 'username' not in login_session:
-        return redirect('/login')   
+        return redirect('/login')
+    else:
+        pass
+
+
+@app.route('/item/<int:item_id>/edit/', methods=['GET', 'POST'])
+@app.route('/item/new', methods=['GET', 'POST'])
+def newItem(item_id=None):
+    if 'username' not in login_session:
+        return redirect('/login')
     if request.method == 'POST':
         name = request.form['name']
         description = request.form['description']

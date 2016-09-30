@@ -3,3 +3,4 @@
 # Categories creating
 # added templates and static
 # Items writing, created category drop down logic
+# Category add/edit functionality

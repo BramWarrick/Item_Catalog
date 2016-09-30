@@ -78,16 +78,28 @@ class Category(Base):
         }
 
     @classmethod
-    def create(cls, name, user_id):
-        category = cls.by_name_user(name, user_id)
+    def add_or_update(cls, name, user_id, category_id=None):
+        category = cls.by_id(category_id)
         if category:
-            return category
+            if category.user_id == user_id:
+                category.category_name = name
+                session.add(category)
+                session.commit()
+                msg = ('New Category %s Successfully Updated'
+                       % Category.category_name)
+                return category, msg
+            else:
+                msg = ('Category %s Not Owned by User'
+                       % Category.category_name)
+                return category, msg
         else:
             newCategory = cls(category_name=name,
                               user_id=user_id)
             session.add(newCategory)
             session.commit()
-            return newCategory
+            msg = ('New Category %s Successfully Created'
+                   % Category.category_name)
+            return newCategory, msg
 
     @classmethod
     def by_name_user(cls, name, user_id):
@@ -100,6 +112,17 @@ class Category(Base):
         categories = session.query(cls).filter_by(user_id=user_id)
         categories = categories.order_by(cls.category_name).all()
         return categories
+
+    @classmethod
+    def by_id(cls, category_id):
+        category = session.query(cls).filter_by(category_id=category_id)
+        if category:
+            category = category.first()
+            return category
+
+    @classmethod
+    def name_by_id(cls, category_id):
+        return Category.by_id(category_id).category_name
 
     def render(self):
         """ Allows values to be passed into category_loop.html
