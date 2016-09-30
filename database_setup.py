@@ -166,6 +166,7 @@ class Item(Base):
             'item_id': self.item_id
         }
 
+    @classmethod
     def add_or_update(cls, item_name, item_description, category_id,
                       user_id, item_id=None):
         item = cls.by_id(item_id)
@@ -175,7 +176,6 @@ class Item(Base):
                 item.item_name = item_name
                 item.item_description = item_description
                 item.category_id = category_id
-                session.add(item)
                 session.commit()
                 msg = ('New Item %s Successfully Updated'
                        % Item.item_name)

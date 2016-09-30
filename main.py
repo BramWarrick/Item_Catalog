@@ -165,7 +165,7 @@ def gdisconnect():
         return response
 
 
-# JSON APIs to view Category Information
+# JSON APIs to view Category/Item Information
 @app.route('/category/<int:category_id>/items/JSON')
 def itemJSON(category_id):
     # category = session.query(Category).filter_by(id=category_id).one()
@@ -202,7 +202,7 @@ def showCategories():
 
 @app.route('/category/<int:category_id>/edit/', methods=['GET', 'POST'])
 @app.route('/category/new', methods=['GET', 'POST'])
-def newCategory(category_id=None):
+def adminCategory(category_id=None):
     if 'username' not in login_session:
         return redirect('/login')
     if request.method == 'POST':
@@ -237,16 +237,16 @@ def categorySingle():
 
 @app.route('/item/<int:item_id>/edit/', methods=['GET', 'POST'])
 @app.route('/item/new', methods=['GET', 'POST'])
-def newItem(item_id=None):
+def adminItem(item_id=None):
     if 'username' not in login_session:
         return redirect('/login')
     if request.method == 'POST':
         name = request.form['name']
-        description = request.form['description']
         category_id = request.form['category_id']
+        description = request.form['description']
         user = User.by_email(login_session['email'])
         if name and description and user:
-            item = Item.create(name, description, category_id, user.user_id)
+            item = Item.add_or_update(name, description, category_id, user.user_id, item_id)
             if item:
                 flash('New Item %s Successfully Created'
                       % Item.item_name)
