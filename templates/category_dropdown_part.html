@@ -1,2 +1,12 @@
 <!-- Category information, rendered in category_loop.html -->
-<option value="{{ category._category_id }}">{{ category._category_name}}</option>
+
+
+{% if category._category_id == default_id %}
+
+	<option selected="selected" value="{{ category._category_id }}">{{ category._category_name}}</option>
+	
+{% else %}
+
+	<option value="{{ category._category_id }}">{{ category._category_name}}</option>
+
+{% endif %}

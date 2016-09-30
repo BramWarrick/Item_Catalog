@@ -135,13 +135,15 @@ class Category(Base):
                 user_id=self.user_id).one().user_name
         return render_template("/category.html", category=self)
 
-    def render_dropdown(self):
+    def render_dropdown(self, default_id):
         """ Allows values to be passed into category_loop.html
             file at runtime"""
         if self:
             self._category_name = self.category_name
             self._category_id = self.category_id
-        return render_template("/category_dropdown_part.html", category=self)
+        return render_template("/category_dropdown_part.html",
+                               category=self,
+                               default_id=default_id)
 
 
 class Item(Base):
@@ -164,6 +166,36 @@ class Item(Base):
             'item_id': self.item_id
         }
 
+    def add_or_update(cls, item_name, item_description, category_id,
+                      user_id, item_id=None):
+        item = cls.by_id(item_id)
+        if item:
+            if item.user_id == user_id:
+                # Item exists and is owned by current user
+                item.item_name = item_name
+                item.item_description = item_description
+                item.category_id = category_id
+                session.add(item)
+                session.commit()
+                msg = ('New Item %s Successfully Updated'
+                       % Item.item_name)
+                return item, msg
+            else:
+                msg = ('Item %s Not Owned by User'
+                       % Item.category_name)
+                return item, msg
+        else:
+            # Item does not exist in db, add item
+            newItem = cls(item_name=item_name,
+                          item_description=item_description,
+                          category_id=category_id,
+                          user_id=user_id)
+            session.add(newItem)
+            session.commit()
+            msg = ('New Item %s Successfully Created'
+                   % Item.item_name)
+            return newItem, msg
+
     @classmethod
     def create(cls, item_name, item_description, category_id, user_id):
         item = cls.by_category_user(category_id, user_id)
@@ -177,6 +209,11 @@ class Item(Base):
             session.add(newItem)
             session.commit()
             return newItem
+
+    @classmethod
+    def by_id(cls, item_id):
+        item = session.query(cls).filter_by(item_id=item_id).first()
+        return item
 
     @classmethod
     def by_category_user(cls, category_id, user_id):

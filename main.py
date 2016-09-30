@@ -243,7 +243,7 @@ def newItem(item_id=None):
     if request.method == 'POST':
         name = request.form['name']
         description = request.form['description']
-        category_id = request.form['category']
+        category_id = request.form['category_id']
         user = User.by_email(login_session['email'])
         if name and description and user:
             item = Item.create(name, description, category_id, user.user_id)
@@ -254,11 +254,25 @@ def newItem(item_id=None):
         else:
             return render_template('item_admin.html')
     else:
+        # Prep values if item_id is provided
+        item_name = ""
+        category_id = ""
+        item_description = ""
+        if item_id:
+            item = Item.by_id(item_id)
+            if item:
+                item_name = item.item_name
+                category_id = item.category_id
+                item_description = item.item_description
+        # Prep standard values
         user = User.by_email(login_session['email'])
         categories = Category.by_user(user.user_id)
         return render_template('item_admin.html',
                                user=user,
-                               categories=categories)
+                               categories=categories,
+                               item_name=item_name,
+                               category_id=category_id,
+                               item_description=item_description)
 
 
 if __name__ == '__main__':
