@@ -161,7 +161,8 @@ def gdisconnect():
 # JSON APIs to view Category/Item Information
 @app.route('/category/<int:category_id>/items/JSON')
 def itemJSON(category_id):
-    # category = session.query(Category).filter_by(id=category_id).one()
+    """ Creates JSON information; part of API
+    """
     items = session.query(Item).filter_by(
         category_id=category_id).all()
     return jsonify(items=[i.serialize for i in items])
@@ -169,12 +170,16 @@ def itemJSON(category_id):
 
 @app.route('/category/<int:category_id>/JSON')
 def categoryJSON(category_id):
+    """ Creates JSON information; part of API
+    """
     category = Category.by_id(category_id)
     return jsonify(category=category.serialize)
 
 
 @app.route('/category/JSON')
 def categoryAllJSON():
+    """ Creates JSON information; part of API
+    """
     categories = session.query(Category).all()
     return jsonify(categories=[r.serialize for r in categories])
 
@@ -182,6 +187,9 @@ def categoryAllJSON():
 # Show all user categories
 @app.route('/')
 def showCategories():
+    """If the user is not signed in, redirect to login. Otherwise, show
+    the categories they own sorted alphabetically.
+    """
     if 'username' not in login_session:
         return redirect('/login')
     else:
@@ -194,6 +202,9 @@ def showCategories():
 @app.route('/category/<int:category_id>/edit/', methods=['GET', 'POST'])
 @app.route('/category/new', methods=['GET', 'POST'])
 def adminCategory(category_id=None):
+    """ If method is a POST, it sorts through the possibilities, editing
+    the category appropriately. Otherwise, the admin page is displayed.
+    """
     if request.method == 'POST':
         post_action = request.form["submit"]
         if 'username' not in login_session:
@@ -207,12 +218,23 @@ def adminCategory(category_id=None):
 
 
 def categoryAdminNotAllowed():
+    """ User is not allowed to create these edits or needs to log in.
+    Redirect to log in.
+    """
     msg = ("Action not allowed. User IDs must match.")
     flash(msg)
     return redirect('/login')
 
 
 def categoryDelete(category_id):
+    """Delete the category, per the users input.
+
+    Arg:
+        category_id: category to be deleted
+
+    Result:
+        redirects user to full category list, showing them category is deleted.
+    """
     items = Item.by_category_id(category_id)
     for item in items:
         session.delete(item)
@@ -224,6 +246,15 @@ def categoryDelete(category_id):
 
 
 def categoryAddOrUpdate(request, category_id=None):
+    """ Determines if the user is authorized. If so, record is added or updated.
+
+    Arg:
+        request: request instance from user interaction on page
+        category_id: if present, an update is needed
+
+    Returns:
+        if all required values are present, it creates or updates the category.
+    """
     name = request.form['category']
     user = getUser()
     if name and user:
@@ -240,10 +271,13 @@ def categoryAddOrUpdate(request, category_id=None):
 
 
 def adminCategoryGET(category_id=None):
+    """Prepares the category_admin.html page. If cateogy_id is present,
+    populates all necessary fields; else renders empty.
+    """
     category_name = ""
     user = getUser()
     if category_id:
-        category_name = Category.name_by_id(category_id)
+        category_name = Category.by_id(category_id).category_name
     return render_template('category_admin.html',
                            category_name=category_name,
                            user_curr=user)
@@ -251,6 +285,12 @@ def adminCategoryGET(category_id=None):
 
 @app.route('/category/<int:category_id>')
 def categorySingle(category_id):
+    """If user is not logged in, they are redirected to log in page.
+
+    Arg:
+        category_id: used to filter the list. This category, alone,
+                     will appear on the page, with its items.
+    """
     if 'username' not in login_session:
         return redirect('/login')
     else:
@@ -265,6 +305,10 @@ def categorySingle(category_id):
 @app.route('/item/<int:item_id>/edit/', methods=['GET', 'POST'])
 @app.route('/item/new', methods=['GET', 'POST'])
 def adminItem(item_id=None):
+    """If user is not logged in, they are redirected to the log in screen.
+    Otherwise, if method is POST item deleted or updated accordingly.
+    GET method will lead to a page render - if user is logged in.
+    """
     if 'username' not in login_session:
         return redirect('/login')
     if request.method == 'POST':
@@ -280,6 +324,13 @@ def adminItem(item_id=None):
 
 
 def itemDelete(redirect_category_id, item_id=None):
+    """Handles two possibilities:
+
+    1) User clicks delete while on screen to create new item - reload
+       to category list page.
+    2) User clicks delete while modifying an item - remove item from
+       table and reload to parent category's page.
+    """
     if item_id is None:
         # User escaped from new item process
         return redirect('/')
@@ -292,13 +343,25 @@ def itemDelete(redirect_category_id, item_id=None):
 
 
 def itemAddOrUpdate(request, item_id=None):
+    """Adds an item if not present, otherwise updates with values from request
+    instance.
+
+    Arg:
+        request: request instance from user interaction on page
+        item_id: If present, the record for this id will be updated.
+
+    Returns:
+        If item is added/updated, redirects to parent category.
+        If item add/update fails, page reloads with error message.
+        If informatin is missing, page reloads with error message.
+    """
     name, category_id, description = itemAdminFields(request)
     user = getUser()
     if name and description and category_id and user:
         item = Item.add_or_update(name, description, category_id,
                                   user.user_id, item_id)
         if item:
-            msg = ('New Item Successfully Updated')
+            msg = 'New Item Successfully Updated'
             flash(msg)
             return redirect('/category/' + category_id)
         else:
@@ -317,6 +380,7 @@ def itemAddOrUpdate(request, item_id=None):
 
 
 def itemAdminFields(request):
+    """Returns values from request instance"""
     name = request.form['name']
     category_id = request.form['category_id']
     description = request.form['description']
@@ -327,7 +391,15 @@ def getUser():
     return User.by_email(login_session['email'])
 
 
-def itemAdminGET(item_id):
+def itemAdminGET(item_id=None):
+    """ Loads item admin page, with correct values, when necessary.
+
+    Arg:
+        item_id: if present, used to fill in form fields
+
+    Returns:
+        item_admin.html page, correctly rendered for type of admin required.
+    """
     item_name, category_id, item_description = itemValuesIfPresent(item_id)
     user, categories = getUserCategories()
     return render_template('item_admin.html', user_curr=user,
@@ -337,7 +409,16 @@ def itemAdminGET(item_id):
 
 
 def itemValuesIfPresent(item_id=None):
-    # Prep values if item_id is provided
+    """Returns values from item table, if item_id exists; else empty strings
+
+    Arg:
+        item_id: if present, used to filter result.
+
+    Returns:
+        item_name: value from Item table or empty string
+        category_id: value from Item table or empty string
+        item_description: value from Item table or empty string
+    """
     item_name = ""
     category_id = ""
     item_description = ""
@@ -351,10 +432,10 @@ def itemValuesIfPresent(item_id=None):
 
 
 def getUserCategories():
+    """ Returns both user and categories for logged in user"""
     user = User.by_email(login_session['email'])
     categories = Category.by_user(user.user_id)
     return user, categories
-
 
 
 if __name__ == '__main__':
