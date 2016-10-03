@@ -6,3 +6,4 @@
 # Category add/edit functionality
 # Item screen populates with existing data
 # Item edit functionality
+# debugging run, linted, comments on database_setup.py

@@ -1,22 +1,38 @@
 <!-- Category information, rendered in category_loop.html -->
 <section>
   <div class="row text-left">
-    <h4 class="col-md-9 col-md-offset-1 text-left">
+    <h4 class="col-md-7 col-md-offset-1 text-left">
       {{ category._category_name| safe }}
     </h4>
+    <div class="col-sm-2 text-center">
+      <a class="login-link" href="/category/{{ category._category_id | safe }}">Details</a> 
+      |
+      <a class="login-link" href="/category/{{ category._category_id | safe }}/edit">Edit</a>
+    </div>
   </div>
 
   <div class="row">
-    <div class="col-md-10 text-right">
+  
+    <div class="col-md-2 col-md-offset-1 stext-left">
       <small>
         Owner: {{ category._owner_name }}
       </small>
     </div>
+
   </div>
+
 </section>
 
 <div class="row">
-  <div class="col-md-11 col_md_offset_1">
+  <div class="col-md-11 col-md-offset-1">
     <hr class="hr">
   </div>
 </div>
+
+    {% for item in category._items %}
+      {% if category._show_description %}
+        {{ item.render(True) | safe }}
+
+      {% endif %}
+
+    {% endfor %}

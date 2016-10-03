@@ -18,11 +18,16 @@
         <div class="col-md-2 text-right">
           <small>
             {% if user_curr %}
-              {{user_curr.username}} (<a class="login-link" href="/blog/logout">logout</a>)
+              {{user_curr.user_name}} (<a class="login-link" href="/gdisconnect">logout</a>)
               <br>
-              <a class="login-link" href="/blog/newentry">Compose New Entry</a>
+              <a class="login-link" href="/category/new">New category</a>
+              |
+              <a class="login-link" href="/item/new">New item</a>
+              <br>
+              <a class="login-link" href="/">Home</a>
+              <br>
             {% else %}
-              <a class="login-link" href="/blog/login">login</a>
+              <a class="login-link" href="/login">login</a>
               |
               <a class="login-link" href="/blog/registration">register</a>
             {% endif %}

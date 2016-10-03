@@ -1,8 +1,6 @@
 from flask import Flask, render_template, request, redirect
 from flask import jsonify, flash, make_response
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from database_setup import Base, User, Category, Item
+from database_setup import User, Category, Item, session
 from flask import session as login_session
 
 import random
@@ -23,12 +21,7 @@ APPLICATION_NAME = "Item Catalog"
 
 
 # Connect to Database and create database session
-engine = create_engine('sqlite:///item_catalog.db')
-Base.metadata.bind = engine
-
-DBSession = sessionmaker(bind=engine)
-session = DBSession()
-
+# sss
 
 # Create anti-forgery state token
 @app.route('/login')
@@ -192,47 +185,81 @@ def showCategories():
     if 'username' not in login_session:
         return redirect('/login')
     else:
-        user = User.by_name_email(login_session['username'],
-                                  login_session['email'])
+        user = User.by_email(login_session['email'])
         categories = Category.by_user(user.user_id)
-        return render_template('category_loop.html', categories=categories)
-
-# Create a new category
+        return render_template('category_loop.html', categories=categories,
+                               user_curr=user)
 
 
 @app.route('/category/<int:category_id>/edit/', methods=['GET', 'POST'])
 @app.route('/category/new', methods=['GET', 'POST'])
 def adminCategory(category_id=None):
-    if 'username' not in login_session:
-        return redirect('/login')
     if request.method == 'POST':
-        name = request.form['category']
-        user = User.by_email(login_session['email'])
-        if name and user:
-            category, msg = Category.add_or_update(name,
-                                                   user.user_id,
-                                                   category_id)
-            if category:
-                flash(msg)
-            return redirect('/')
+        post_action = request.form["submit"]
+        if 'username' not in login_session:
+            return categoryAdminNotAllowed()
+        elif post_action == "delete":
+            return categoryDelete(category_id)
         else:
-            return render_template('category_admin.html')
+            return categoryAddOrUpdate(request, category_id)
     else:
-        category_name = ""
-        if category_id:
-            category_name = Category.name_by_id(category_id)
-        return render_template('category_admin.html',
-                               category_name=category_name)
+        return adminCategoryGET(category_id)
 
-# Show category and contents
+
+def categoryAdminNotAllowed():
+    msg = ("Action not allowed. User IDs must match.")
+    flash(msg)
+    return redirect('/login')
+
+
+def categoryDelete(category_id):
+    items = Item.by_category_id(category_id)
+    for item in items:
+        session.delete(item)
+        session.commit()
+    category = Category.by_id(category_id)
+    session.delete(category)
+    session.commit()
+    return redirect('/')
+
+
+def categoryAddOrUpdate(request, category_id=None):
+    name = request.form['category']
+    user = getUser()
+    if name and user:
+        category = Category.add_or_update(name, user.user_id, category_id)
+        if category:
+            msg = ("Category %s updated." % name)
+            flash(msg)
+        return redirect('/')
+    else:
+        msg = "Please provide a name for the category"
+        flash(msg)
+        return render_template('category_admin.html',
+                               user_curr=user)
+
+
+def adminCategoryGET(category_id=None):
+    category_name = ""
+    user = getUser()
+    if category_id:
+        category_name = Category.name_by_id(category_id)
+    return render_template('category_admin.html',
+                           category_name=category_name,
+                           user_curr=user)
 
 
 @app.route('/category/<int:category_id>')
-def categorySingle():
+def categorySingle(category_id):
     if 'username' not in login_session:
         return redirect('/login')
     else:
-        pass
+        user = User.by_email(login_session['email'])
+        if category_id:
+            category = Category.by_id(category_id)
+        return render_template('category_single.html',
+                               category=category,
+                               user_curr=user)
 
 
 @app.route('/item/<int:item_id>/edit/', methods=['GET', 'POST'])
@@ -241,38 +268,93 @@ def adminItem(item_id=None):
     if 'username' not in login_session:
         return redirect('/login')
     if request.method == 'POST':
-        name = request.form['name']
-        category_id = request.form['category_id']
-        description = request.form['description']
-        user = User.by_email(login_session['email'])
-        if name and description and user:
-            item = Item.add_or_update(name, description, category_id, user.user_id, item_id)
-            if item:
-                flash('New Item %s Successfully Created'
-                      % Item.item_name)
-            return redirect('/')
-        else:
-            return render_template('item_admin.html')
+        post_action = request.form['submit']
+        redirect_category_id = str(request.form['category_id'])
+        # Delete or Add-or-Update
+        if post_action == 'delete':
+            return itemDelete(redirect_category_id, item_id)
+        else:  # Submit
+            return itemAddOrUpdate(request, item_id)
     else:
-        # Prep values if item_id is provided
-        item_name = ""
-        category_id = ""
-        item_description = ""
-        if item_id:
-            item = Item.by_id(item_id)
-            if item:
-                item_name = item.item_name
-                category_id = item.category_id
-                item_description = item.item_description
-        # Prep standard values
-        user = User.by_email(login_session['email'])
-        categories = Category.by_user(user.user_id)
+        return itemAdminGET(item_id)
+
+
+def itemDelete(redirect_category_id, item_id=None):
+    if item_id is None:
+        # User escaped from new item process
+        return redirect('/')
+    else:
+        item = Item.by_id(item_id)
+        if item:
+            session.delete(item)
+            session.commit()
+        return redirect('/category/' + redirect_category_id)
+
+
+def itemAddOrUpdate(request, item_id=None):
+    name, category_id, description = itemAdminFields(request)
+    user = getUser()
+    if name and description and category_id and user:
+        item = Item.add_or_update(name, description, category_id,
+                                  user.user_id, item_id)
+        if item:
+            msg = ('New Item Successfully Updated')
+            flash(msg)
+            return redirect('/category/' + category_id)
+        else:
+            msg = 'An Error Occurred, Item did not update or add'
+            flash(msg)
+            # Reload page with their values
+            return render_template('item_admin.html',
+                                   name=name, category_id=category_id,
+                                   description=description,
+                                   user_curr=getUser())
+    else:
+        msg = 'Please provide a value in all fields'
+        flash(msg)
         return render_template('item_admin.html',
-                               user=user,
-                               categories=categories,
-                               item_name=item_name,
-                               category_id=category_id,
-                               item_description=item_description)
+                               user_curr=getUser())
+
+
+def itemAdminFields(request):
+    name = request.form['name']
+    category_id = request.form['category_id']
+    description = request.form['description']
+    return name, category_id, description
+
+
+def getUser():
+    return User.by_email(login_session['email'])
+
+
+def itemAdminGET(item_id):
+    item_name, category_id, item_description = itemValuesIfPresent(item_id)
+    user, categories = getUserCategories()
+    return render_template('item_admin.html', user_curr=user,
+                           categories=categories, item_name=item_name,
+                           category_id=category_id,
+                           item_description=item_description)
+
+
+def itemValuesIfPresent(item_id=None):
+    # Prep values if item_id is provided
+    item_name = ""
+    category_id = ""
+    item_description = ""
+    if item_id:
+        item = Item.by_id(item_id)
+        if item:
+            item_name = item.item_name
+            category_id = item.category_id
+            item_description = item.item_description
+    return item_name, category_id, item_description
+
+
+def getUserCategories():
+    user = User.by_email(login_session['email'])
+    categories = Category.by_user(user.user_id)
+    return user, categories
+
 
 
 if __name__ == '__main__':
