@@ -1,0 +1,4 @@
+Git clone the repository to your desired directory.
+Run the main.py file to activate the web service.
+Navigate to localhost:5000, log in, and you should be good to go.
+The New Item and New Category options are in the upper right after logging in.
