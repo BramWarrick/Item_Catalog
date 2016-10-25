@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect
 from flask import jsonify, flash, make_response
 from database_setup import User, Category, Item, session
 from flask import session as login_session
+from functools import wraps
 
 import random
 import string
@@ -20,8 +21,19 @@ CLIENT_ID = json.loads(
 APPLICATION_NAME = "Item Catalog"
 
 
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'email' in login_session:
+            return f(*args, **kwargs)
+        else:
+            flash("You are not allowed to access there")
+            return redirect('/login')
+    return decorated_function
+
 # Connect to Database and create database session
 # sss
+
 
 # Create anti-forgery state token
 @app.route('/login')
@@ -186,17 +198,15 @@ def categoryAllJSON():
 
 # Show all user categories
 @app.route('/')
+@login_required
 def showCategories():
     """If the user is not signed in, redirect to login. Otherwise, show
     the categories they own sorted alphabetically.
     """
-    if 'username' not in login_session:
-        return redirect('/login')
-    else:
-        user = User.by_email(login_session['email'])
-        categories = Category.by_user(user.user_id)
-        return render_template('category_loop.html', categories=categories,
-                               user_curr=user)
+    user = User.by_email(login_session['email'])
+    categories = Category.by_user(user.user_id)
+    return render_template('category_loop.html', categories=categories,
+                           user_curr=user)
 
 
 @app.route('/category/<int:category_id>/edit/', methods=['GET', 'POST'])
@@ -226,6 +236,7 @@ def categoryAdminNotAllowed():
     return redirect('/login')
 
 
+@login_required
 def categoryDelete(category_id):
     """Delete the category, per the users input.
 
@@ -284,6 +295,7 @@ def adminCategoryGET(category_id=None):
 
 
 @app.route('/category/<int:category_id>')
+@login_required
 def categorySingle(category_id):
     """If user is not logged in, they are redirected to log in page.
 
@@ -291,26 +303,22 @@ def categorySingle(category_id):
         category_id: used to filter the list. This category, alone,
                      will appear on the page, with its items.
     """
-    if 'username' not in login_session:
-        return redirect('/login')
-    else:
-        user = User.by_email(login_session['email'])
-        if category_id:
-            category = Category.by_id(category_id)
-        return render_template('category_single.html',
-                               category=category,
-                               user_curr=user)
+    user = User.by_email(login_session['email'])
+    if category_id:
+        category = Category.by_id(category_id)
+    return render_template('category_single.html',
+                           category=category,
+                           user_curr=user)
 
 
 @app.route('/item/<int:item_id>/edit/', methods=['GET', 'POST'])
 @app.route('/item/new', methods=['GET', 'POST'])
+@login_required
 def adminItem(item_id=None):
     """If user is not logged in, they are redirected to the log in screen.
     Otherwise, if method is POST item deleted or updated accordingly.
     GET method will lead to a page render - if user is logged in.
     """
-    if 'username' not in login_session:
-        return redirect('/login')
     if request.method == 'POST':
         post_action = request.form['submit']
         redirect_category_id = str(request.form['category_id'])
