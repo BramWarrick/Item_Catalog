@@ -1,7 +1,9 @@
 Navigate to desired directory for git clone and run code below:
 	git clone https://github.com/BramWarrick/Item_Catalog.git
+Add client_secrets.json file to directory using directions on this webpage:
+	https://developers.google.com/api-client-library/python/guide/aaa_client_secrets
 Run the main.py file to activate the web service:
-Possible ways:
+	Possible ways:
 	Open main.py in Sublime and press ctrl+b to start.
 	In windows, if properly configured, navigate to the directory and enter "main.py" and press enter
 	In Bash, navigate to the directory and enter "main.py" and press enter

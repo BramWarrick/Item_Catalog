@@ -12,3 +12,4 @@
 # Tweaked line that introduced authenitication bug
 # Modified setup.txt file to add required commands and conditionals
 # Added user registration decorator - improves readability, reduces duplication
+# Added detail to setup.txt file
