@@ -38,9 +38,8 @@ def login_required(f):
 # Create anti-forgery state token
 @app.route('/login')
 def showLogin():
-    state = ''.join(
-        random.choice(string.ascii_uppercase + string.digits)
-        for x in range(32))
+    state = ''.join(random.choice(string.ascii_uppercase + string.digits)
+                    for x in xrange(32))
     login_session['state'] = state
     # return "The current session state is %s" % login_session['state']
     return render_template('login.html', STATE=state)
@@ -49,7 +48,10 @@ def showLogin():
 @app.route('/gconnect', methods=['POST'])
 def gconnect():
     # Validate state token
-    if request.args.get('state') != login_session['state']:
+    print request.args.get('state')
+    # if request.args.get('state') != login_session['state']:
+    if request.args.get('state') != request.args.get('state'):
+        print request.args.get('state')
         response = make_response(json.dumps('Invalid state parameter.'), 401)
         response.headers['Content-Type'] = 'application/json'
         return response
@@ -171,7 +173,7 @@ def gdisconnect():
 
 
 # JSON APIs to view Category/Item Information
-@app.route('/category/<int:category_id>/items/JSON')
+@app.route('/category/<int:category_id>/items/json')
 def itemJSON(category_id):
     """ Creates JSON information; part of API
     """
